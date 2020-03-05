@@ -489,6 +489,7 @@
 
     function Zoomable() {
       this._draw = bind(this._draw, this);
+      this.pan = bind(this.pan, this);
       this.focus = bind(this.focus, this);
       this._size = bind(this._size, this);
       this._init = bind(this._init, this);
@@ -513,6 +514,7 @@
           throw "Only horizontal zooming is currently supported";
         }
         this.orig_h = this.h.copy();
+        this.orig_v = this.v.copy();
         this.zoomer = d3.behavior.zoom().on('zoom', (function(_this) {
           return function() {
             return _this.trigger('zoom', _this.focus(_this.h.domain()));
@@ -528,7 +530,15 @@
             }
           };
         })(this));
+        this.dragger = d3.behavior.drag();
+        this.dragger.on('drag', (function(_this) {
+          return function() {
+            _this.pan(d3.event.x, d3.event.y);
+            return _this.trigger('pan', d3.event.x, d3.event.y);
+          };
+        })(this));
         this.zoomer(this.content.all);
+        this.content.all.call(this.dragger);
         this.content.all.on('dblclick.zoom', null);
         last_touch_event = void 0;
         touchstart = function() {
@@ -555,6 +565,8 @@
       var current_extent;
       Zoomable.__super__._size.apply(this, arguments);
       c3.d3.set_range(this.orig_h, this.h_orient === 'left' ? [0, this.content.width] : [this.content.width, 0]);
+      c3.d3.set_range(this.orig_v, this.v_orient === 'bottom' ? [this.content.height, 0] : [0, this.content.height]);
+      c3.d3.set_range(this.v, this.v_orient === 'bottom' ? [this.content.height, 0] : [0, this.content.height]);
       current_extent = this.h.domain();
       this.h.domain(this.orig_h.domain());
       this.zoomer.x(this.h);
@@ -571,7 +583,7 @@
     };
 
     Zoomable.prototype.focus = function(extent) {
-      var axis, base, base1, domain, domain_width, i, j, layer, left_diff, len, len1, new_domain, ref, ref1, ref2, ref3, right_diff, scale, threshold, translate;
+      var axis, base, base1, domain, domain_height, domain_width, domain_y, i, j, layer, left_diff, len, len1, new_domain, ref, ref1, ref2, ref3, right_diff, scale, threshold, translate, translate_y;
       if (this.rendered) {
         if ((extent == null) || !extent.length) {
           extent = this.orig_h.domain();
@@ -579,6 +591,8 @@
         extent = extent.slice(0);
         domain = this.orig_h.domain();
         domain_width = domain[1] - domain[0];
+        domain_y = this.orig_v.domain();
+        domain_height = domain_y[1] - domain_y[0];
         extent[0] = (ref = typeof (base = extent[0]).getTime === "function" ? base.getTime() : void 0) != null ? ref : extent[0];
         extent[1] = (ref1 = typeof (base1 = extent[1]).getTime === "function" ? base1.getTime() : void 0) != null ? ref1 : extent[1];
         if (extent[0] < domain[0]) {
@@ -599,6 +613,7 @@
         }
         scale = domain_width / (extent[1] - extent[0]);
         translate = (domain[0] - extent[0]) * scale * (this.content.width / domain_width);
+        translate_y = domain_y[0] - this.v.domain()[0];
         this.zoomer.translate([translate, 0]).scale(scale);
         this.layers_svg.all.selectAll('.scaled').attr('transform', 'translate(' + translate + ' 0)scale(' + scale + ' 1)');
         new_domain = this.h.domain().slice(0);
@@ -639,6 +654,19 @@
           return new_domain;
         }
       }
+    };
+
+    Zoomable.prototype.pan = function(x, y) {
+      var i, layer, len, ref, results, translate;
+      translate = this.orig_v.invert(y);
+      this.v.domain([translate, translate + 1]);
+      ref = this.layers;
+      results = [];
+      for (i = 0, len = ref.length; i < len; i++) {
+        layer = ref[i];
+        results.push(layer.zoom != null);
+      }
+      return results;
     };
 
     Zoomable.prototype._draw = function(origin) {

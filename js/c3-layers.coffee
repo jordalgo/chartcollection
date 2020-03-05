@@ -1306,12 +1306,19 @@ class c3.Plot.Layer.Swimlane.Segment extends c3.Plot.Layer.Swimlane
         # Bind here because the current data set is dynamic based on zooming
         @rects = @rects_group.select('rect.segment').options(@rect_options).bind(data, @key).update()
 
+        # Get the vertical scale based on any possible vertical panning from a zoomable chart
+        max_depth = @v.domain()[1] - @v.domain()[0]
+        translate = (@chart.v.domain()[0] - @chart.orig_v.domain()[0]) * max_depth # Assume V scale is 0-1
+        # console.debug 'TRANSLATE', @chart.v.domain(), translate, max_depth
+        @v.domain [translate, translate+max_depth]
+
         # Position the rects
         h = if @scaled_g? then (@chart.orig_h ? @h) else @h
         zero_pos = h(0)
         (if origin is 'resize' then @rects.all else @rects.new).attr 'height', @dy
-        (if !scaled or !@key? or origin=='resize' or (origin=='redraw' and this instanceof c3.Plot.Layer.Swimlane.Flamechart)
-        then @rects.all else @rects.new).attr
+        # (if !scaled or !@key? or origin=='resize' or (origin=='redraw' and this instanceof c3.Plot.Layer.Swimlane.Flamechart)
+        # then @rects.all else @rects.new).attr
+        @rects.all.attr
             x: (d)=> h @x(d)
             width: (d)=> (h @dx(d)) - zero_pos
             y: if not @y? then 0 else (d)=> @v @y(d)

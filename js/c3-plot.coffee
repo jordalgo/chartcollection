@@ -368,6 +368,7 @@ class c3.Plot.Zoomable extends c3.Plot
         super
         if @zoomable != 'h' then throw "Only horizontal zooming is currently supported"
         @orig_h = @h.copy()
+        @orig_v = @v.copy()
 
         # Make it zoomable!
         @zoomer = d3.behavior.zoom().on 'zoom', =>
@@ -378,8 +379,15 @@ class c3.Plot.Zoomable extends c3.Plot
             @trigger 'zoomend', @h.domain()
             @prev_zoomend_domain = @h.domain()[..]
 
+        # Make it pannable
+        @dragger = d3.behavior.drag()
+        @dragger.on 'drag', =>
+            @pan d3.event.x, d3.event.y
+            @trigger 'pan', d3.event.x, d3.event.y
+
         # Only zoom over g.content; if we cover the entire SVG, then axes cause zoom to be uncentered.
         @zoomer @content.all
+        @content.all.call @dragger
         # Disable D3's double-click from zooming in
         @content.all.on 'dblclick.zoom', null
         # Disable D3's double-touch from zooming in (http://stackoverflow.com/questions/19997351/d3-behavior-zoom-disable-double-tap-behaviour/34999401#34999401)
@@ -404,9 +412,12 @@ class c3.Plot.Zoomable extends c3.Plot
     _size: =>
         super
         c3.d3.set_range @orig_h, if @h_orient is 'left' then [0, @content.width] else [@content.width, 0]
+        c3.d3.set_range @orig_v, if @v_orient is 'bottom' then [@content.height, 0] else [0, @content.height]
+        c3.d3.set_range @v, if @v_orient is 'bottom' then [@content.height, 0] else [0, @content.height]
         # Update the zooming state for the new size
         current_extent = @h.domain()
         @h.domain @orig_h.domain()
+        # @v.domain @orig_v.domain()
         @zoomer.x @h
         if @zoom_extent? # Limit the maximum you can zoom in
             if @zoom_extent is 'integer' then @zoomer.scaleExtent [1, 1/ (@content.width/@orig_h.domain()[1])]
@@ -418,10 +429,13 @@ class c3.Plot.Zoomable extends c3.Plot
     # Zoom to a specified focus domain, but only if the domain actually changes
     # @param extent [Array<Number>] The domain to set the focus to.
     focus: (extent)=> if @rendered
+        # console.debug extent, @h.domain(), @v.domain()
         if not extent? or not extent.length then extent = @orig_h.domain()
         extent = extent[..] # Clone array so it doesn't modify caller's values
         domain = @orig_h.domain()
         domain_width = domain[1]-domain[0]
+        domain_y = @orig_v.domain()
+        domain_height = domain_y[1]-domain_y[0]
 
         # If the user is operating with a time scale, then convert to ms for manipulations
         extent[0] = extent[0].getTime?() ? extent[0]
@@ -440,6 +454,8 @@ class c3.Plot.Zoomable extends c3.Plot
         # Calculate the scale and translate factors based on our tweaked extent.
         scale = (domain_width) / (extent[1]-extent[0])
         translate = (domain[0]-extent[0]) * scale * (@content.width/domain_width)
+        translate_y = (domain_y[0]-@v.domain()[0]) 
+        # console.debug "TRANSLATE Y", translate_y, @v.domain()[0], @content.height, domain_height
 
         # Update the state of the zoomer to match any adjustments we made or to reflect a new resize()
         # This also updates the h scale which non-scaled layers can use for positioning
@@ -469,6 +485,13 @@ class c3.Plot.Zoomable extends c3.Plot
             @trigger 'redraw', 'focus'
             @trigger 'restyle', true
         return if domain[0]==extent[0] and domain[1]==extent[1] then null else new_domain
+
+    pan: (x, y) => 
+        translate = @orig_v.invert y
+        @v.domain [translate, translate+1]
+        # console.debug "PAN", [x,y], translate, @v.domain()
+        for layer in @layers
+            layer.zoom?
 
     _draw: (origin)=>
         super

@@ -1948,7 +1948,7 @@
     };
 
     Segment.prototype._draw = function(origin) {
-      var current_labels, data, datum, dx, h, half_pixel_width, l, left_edge, len, ref, ref1, ref2, right_edge, self, x, zero_pos;
+      var current_labels, data, datum, dx, h, half_pixel_width, l, left_edge, len, max_depth, ref, ref1, ref2, right_edge, self, translate, x, zero_pos;
       Segment.__super__._draw.apply(this, arguments);
       ref = this.h.domain(), left_edge = ref[0], right_edge = ref[1];
       half_pixel_width = (right_edge - left_edge) / ((this.h.range()[1] - this.h.range()[0]) || 1) / 2;
@@ -1972,10 +1972,13 @@
         }
       }
       this.rects = this.rects_group.select('rect.segment').options(this.rect_options).bind(data, this.key).update();
+      max_depth = this.v.domain()[1] - this.v.domain()[0];
+      translate = (this.chart.v.domain()[0] - this.chart.orig_v.domain()[0]) * max_depth;
+      this.v.domain([translate, translate + max_depth]);
       h = this.scaled_g != null ? (ref2 = this.chart.orig_h) != null ? ref2 : this.h : this.h;
       zero_pos = h(0);
       (origin === 'resize' ? this.rects.all : this.rects["new"]).attr('height', this.dy);
-      (!scaled || (this.key == null) || origin === 'resize' || (origin === 'redraw' && this instanceof c3.Plot.Layer.Swimlane.Flamechart) ? this.rects.all : this.rects["new"]).attr({
+      this.rects.all.attr({
         x: (function(_this) {
           return function(d) {
             return h(_this.x(d));

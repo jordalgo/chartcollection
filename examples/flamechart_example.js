@@ -13,17 +13,20 @@ var flamechart_calltrace = new c3.Plot.Zoomable({
         d3.min(calltrace, function (d) { return d.x; }),
         d3.max(calltrace, function (d) { return d.x + d.dx; })
     ]),
+    height: 100,
     // Allow the timeline to be **zoomable** with mouse and touch events.
     zoomable: 'h',
     // Create a single **Flamechart** layer.
     layers: [
         flamechart_layer = new c3.Plot.Layer.Swimlane.Flamechart({
+            v_orient: 'top',
             data: calltrace,
             // Describe the **time** and **duration** of each call.
             key: function (d) { return d.x; },
             x: function (d) { return d.x; },
             dx: function (d) { return d.dx; },
             dy: 20,
+            //anchorHeight: 150,
             // **HTML hover** "tooltip" to display the function name.
             hover: function (d) { return d ? d.name : ''; },
             // **Style** each segment with a color based on the function name.
