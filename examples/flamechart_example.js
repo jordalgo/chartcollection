@@ -8,12 +8,12 @@ var function_color = d3.scale.category20();
 var flamechart_layer;
 var flamechart_calltrace = new c3.Plot.Zoomable({
     anchor: '#flamechart_example',
+    //anchor_height: 1000,
     // Setup the **horizontal scale** to cover the entire time duration of the call trace
     h: d3.scale.linear().domain([
         d3.min(calltrace, function (d) { return d.x; }),
         d3.max(calltrace, function (d) { return d.x + d.dx; })
     ]),
-    height: 100,
     // Allow the timeline to be **zoomable** with mouse and touch events.
     zoomable: 'h',
     // Create a single **Flamechart** layer.
@@ -26,7 +26,6 @@ var flamechart_calltrace = new c3.Plot.Zoomable({
             x: function (d) { return d.x; },
             dx: function (d) { return d.dx; },
             dy: 20,
-            //anchorHeight: 150,
             // **HTML hover** "tooltip" to display the function name.
             hover: function (d) { return d ? d.name : ''; },
             // **Style** each segment with a color based on the function name.
@@ -66,5 +65,6 @@ for (var _i = 0, _a = ['input', 'change']; _i < _a.length; _i++) { // 'input' ev
 document.getElementById('bottom_up').addEventListener('change', function () {
     var element = this;
     flamechart_layer.v_orient = element.checked ? 'bottom' : 'top';
-    flamechart_layer.redraw();
+    //flamechart_layer.redraw();
+    flamechart_calltrace.resize();
 });

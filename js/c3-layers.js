@@ -1810,7 +1810,7 @@
     };
 
     Swimlane.prototype._size = function() {
-      if (this.y == null) {
+      if (this.dy == null) {
         this.dy = this.height;
       } else {
         if (this.dy == null) {
@@ -1832,7 +1832,7 @@
         }).apply(this)).update();
       }
       if (this.y != null) {
-        return this.chart.size(null, this.dy * (Math.abs(this.v.domain()[1] - this.v.domain()[0])) + this.chart.margins.top + this.chart.margins.bottom);
+        return this.chart.size(null, this.dy * (Math.abs(this.v.domain()[1] - this.v.domain()[0])) + this.chart.margins.top + this.chart.margins.bottom, this.chart.anchor_height);
       }
     };
 

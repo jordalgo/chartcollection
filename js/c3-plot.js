@@ -533,7 +533,7 @@
         this.dragger = d3.behavior.drag();
         this.dragger.on('drag', (function(_this) {
           return function() {
-            _this.pan(d3.event.x, d3.event.y);
+            _this.pan(d3.event.x, d3.event.y, d3.event.dx, d3.event.dy);
             return _this.trigger('pan', d3.event.x, d3.event.y);
           };
         })(this));
@@ -565,8 +565,7 @@
       var current_extent;
       Zoomable.__super__._size.apply(this, arguments);
       c3.d3.set_range(this.orig_h, this.h_orient === 'left' ? [0, this.content.width] : [this.content.width, 0]);
-      c3.d3.set_range(this.orig_v, this.v_orient === 'bottom' ? [this.content.height, 0] : [0, this.content.height]);
-      c3.d3.set_range(this.v, this.v_orient === 'bottom' ? [this.content.height, 0] : [0, this.content.height]);
+      c3.d3.set_range(this.orig_v, this.layers[0].v_orient === 'top' ? [this.content.height, 0] : [0, this.content.height]);
       current_extent = this.h.domain();
       this.h.domain(this.orig_h.domain());
       this.zoomer.x(this.h);
@@ -656,15 +655,24 @@
       }
     };
 
-    Zoomable.prototype.pan = function(x, y) {
-      var i, layer, len, ref, results, translate;
-      translate = this.orig_v.invert(y);
-      this.v.domain([translate, translate + 1]);
+    Zoomable.prototype.pan = function(x, y, dx, dy) {
+      var i, layer, len, next_v_domain_min, orig_v_domain_height, orig_v_domain_max, orig_v_domain_min, ref, results, translate, v;
+      v = this.orig_v.invert(dy);
+      orig_v_domain_min = this.orig_v.domain()[0];
+      orig_v_domain_max = this.orig_v.domain()[1];
+      orig_v_domain_height = orig_v_domain_max - orig_v_domain_min;
+      next_v_domain_min = (v + this.v.domain()[0]) - orig_v_domain_height;
+      translate = next_v_domain_min > orig_v_domain_max || next_v_domain_min < orig_v_domain_min ? this.v.domain()[0] : next_v_domain_min;
+      this.v.domain([translate, translate + orig_v_domain_height]);
       ref = this.layers;
       results = [];
       for (i = 0, len = ref.length; i < len; i++) {
         layer = ref[i];
-        results.push(layer.zoom != null);
+        if (layer.rendered) {
+          results.push(typeof layer.zoom === "function" ? layer.zoom() : void 0);
+        } else {
+          results.push(void 0);
+        }
       }
       return results;
     };

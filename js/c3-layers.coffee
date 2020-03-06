@@ -1196,7 +1196,7 @@ class c3.Plot.Layer.Swimlane extends c3.Plot.Layer
 
     _size: =>
         # If @dy is not defined, we determine it based on the chart height
-        if not @y? then @dy = @height
+        if not @dy? then @dy = @height
         else @dy ?= Math.round @height / (Math.abs(@v.domain()[1]-@v.domain()[0]))
 
         # If a swimlane starts at the bottom, then shift up by dy because SVG always
@@ -1211,7 +1211,7 @@ class c3.Plot.Layer.Swimlane extends c3.Plot.Layer
         @lanes?.bind([@v.domain()[0]...@v.domain()[1]]).update()
 
         # Update chart height to fit current number of swimlanes based on current v domain
-        if @y? then @chart.size null, @dy*(Math.abs(@v.domain()[1]-@v.domain()[0])) + @chart.margins.top + @chart.margins.bottom
+        if @y? then @chart.size null, @dy*(Math.abs(@v.domain()[1]-@v.domain()[0])) + @chart.margins.top + @chart.margins.bottom, @chart.anchor_height
 
     _draw: (origin)=>
         if origin is 'resize' or origin is 'render'

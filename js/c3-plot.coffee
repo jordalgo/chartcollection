@@ -382,9 +382,15 @@ class c3.Plot.Zoomable extends c3.Plot
         # Make it pannable
         @dragger = d3.behavior.drag()
         @dragger.on 'drag', =>
-            @pan d3.event.x, d3.event.y
+            @pan d3.event.x, d3.event.y, d3.event.dx, d3.event.dy
             @trigger 'pan', d3.event.x, d3.event.y
 
+        # @dragger.on 'dragstart', (x, y) =>
+        #     console.debug 'dragstart', d3.event.x, d3.event.y
+
+        # @dragger.origin (x, y) =>
+        #     console.debug 'ORIGIN', x, y
+        #     return {x,y}
         # Only zoom over g.content; if we cover the entire SVG, then axes cause zoom to be uncentered.
         @zoomer @content.all
         @content.all.call @dragger
@@ -412,8 +418,8 @@ class c3.Plot.Zoomable extends c3.Plot
     _size: =>
         super
         c3.d3.set_range @orig_h, if @h_orient is 'left' then [0, @content.width] else [@content.width, 0]
-        c3.d3.set_range @orig_v, if @v_orient is 'bottom' then [@content.height, 0] else [0, @content.height]
-        c3.d3.set_range @v, if @v_orient is 'bottom' then [@content.height, 0] else [0, @content.height]
+        c3.d3.set_range @orig_v, if @layers[0].v_orient is 'top' then [@content.height, 0] else [0, @content.height]
+        # c3.d3.set_range @v, if @v_orient is 'top' then [@content.height, 0] else [0, @content.height]
         # Update the zooming state for the new size
         current_extent = @h.domain()
         @h.domain @orig_h.domain()
@@ -486,12 +492,18 @@ class c3.Plot.Zoomable extends c3.Plot
             @trigger 'restyle', true
         return if domain[0]==extent[0] and domain[1]==extent[1] then null else new_domain
 
-    pan: (x, y) => 
-        translate = @orig_v.invert y
-        @v.domain [translate, translate+1]
-        # console.debug "PAN", [x,y], translate, @v.domain()
+    pan: (x, y, dx, dy) => 
+        v = @orig_v.invert dy
+        # Todo use something slightly lower than the orig_v.domain()[1] for the bottom of the stack
+        orig_v_domain_min = @orig_v.domain()[0];
+        orig_v_domain_max = @orig_v.domain()[1]
+        orig_v_domain_height = orig_v_domain_max - orig_v_domain_min;
+        next_v_domain_min = (v + @v.domain()[0]) - orig_v_domain_height
+        translate = if next_v_domain_min > orig_v_domain_max or next_v_domain_min < orig_v_domain_min then @v.domain()[0] else next_v_domain_min
+        @v.domain [translate, translate + orig_v_domain_height]
+        # Pan all of the layers
         for layer in @layers
-            layer.zoom?
+            if layer.rendered then layer.zoom?()
 
     _draw: (origin)=>
         super

@@ -927,6 +927,15 @@ class c3.Base
         @width = @anchor.offsetWidth
         @height = @anchor.offsetHeight
         @_size()
+    # size: (width, height, anchor_height)->
+    #     if width? then @anchor.style.width = (if typeof width is 'number' then width+'px' else width)
+    #     if anchor_height?
+    #         @anchor.style.height = (if typeof anchor_height is 'number' then anchor_height+'px' else anchor_height)
+    #     else if height? 
+    #         @anchor.style.height = (if typeof height is 'number' then height+'px' else height)
+    #     @width = @anchor.offsetWidth
+    #     @height = if anchor_height? and height? then height else @anchor.offsetHeight
+    #     @_size()
     _size: ->
 
     # Update DOM data bindings based on new or modified data set
